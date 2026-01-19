@@ -10,24 +10,30 @@ const userSchema = new Schema({
         required: true,
         unique: true,
     },
+    phoneNumber: {
+        type: String,
+        unique: true,
+    },
     password: {
         type: String,
         required: true,
+    },
+    profileImage: {
+        type: String,
     },  
+
     carNumber: {
         type: String,
-        required: true,
         unique: true,
     },
     carModel: {
         type: String,
-        required: true,
     },
     userLicense: {
         type: String,
-        required: true,
         unique: true,
     },
+
     
 
 

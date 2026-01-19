@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import asyncHandler from '../utils/asyncHandler.js';
-import User from '../models/user.model.js';
-import Admin from '../models/admin.model.js';
+import { User } from '../models/user.model.js';
+import { Admin } from '../models/admin.model.js';
 import ApiError from '../utils/apiError.js';
 
 export const authenticateUser = asyncHandler(async (req, res, next) => {
