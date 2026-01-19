@@ -59,26 +59,33 @@ console.log("License image path:", userLicenseLocalPath);
 
 
 export const loginUser = asyncHandler(async (req, res, next) => {
-  try {
-      const { email, password } = req.body;
-      const user = await User.findOne({ email });
-      if (!user) {
-          return next(new ApiError('Invalid email or password', 401));
-      }
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-          return next(new ApiError('Invalid email or password', 401));
-      }
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-      });
-      res.status(200).json(new ApiResponse(true, 'Login successful', { token }));
-  } catch (error) {
-        return next(new ApiError({message:error.message}));
+    try {
+        const { email, password } = req.body;
 
-    
-  }
+        if (!email || !password) {
+            return next(new ApiError(400, "Email and password are required"));
+        }
+        const user = await User.findOne({ email });
+        if (!user) {
+            return next(new ApiError(401, "Invalid email or password"));
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return next(new ApiError(401, "Invalid email or password"));
+        }
+const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
 });
+        res.status(200).json(new ApiResponse(true, "Login successful", { token, user: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        } }));
+    } catch (error) {
+        return next(new ApiError(500, error.message));
+    }
+});
+
 
 
 export const getUser = asyncHandler(async (req, res, next) => {
