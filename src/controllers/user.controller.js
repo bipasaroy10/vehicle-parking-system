@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { Admin } from '../models/admin.model.js';
 
 export const registerUser = asyncHandler(async (req, res, next) => {
     try {
@@ -80,7 +81,8 @@ const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECR
           id: user._id,
           name: user.name,
           email: user.email
-        } }));
+        }
+     }));
     } catch (error) {
         return next(new ApiError(500, error.message));
     }
@@ -140,3 +142,36 @@ export const updatePassword = asyncHandler(async (req, res, next) => {
         
     
 });
+
+
+
+export const getAllAdmins = asyncHandler(async (req, res, next) => {  
+    try {
+        const admins = await Admin.find().select('-password');
+        res.status(200).json(new ApiResponse(true, 'Admins fetched successfully', admins));
+    } catch (error) {
+        return next(new ApiError({message:error.message}));
+    }   
+});
+
+
+export const bookParking = asyncHandler(async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const { adminId, parkingSlot, bookingTime } = req.body;
+        const admin = await Admin.findById(adminId);
+        if (!admin) {
+            return next(new ApiError('Admin not found', 404));
+        }
+        // Here you would typically create a Booking model and save the booking details
+        res.status(200).json(new ApiResponse(true, 'Parking booked successfully', {
+            userId,
+            adminId,
+            parkingSlot,
+            bookingTime
+        }));
+    } catch (error) {
+        return next(new ApiError({message:error.message}));
+    }
+});
+

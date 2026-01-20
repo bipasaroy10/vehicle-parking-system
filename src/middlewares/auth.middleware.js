@@ -1,8 +1,35 @@
 import jwt from 'jsonwebtoken';
 import asyncHandler from '../utils/asyncHandler.js';
+import { Owner } from '../models/owner.model.js';
 import { User } from '../models/user.model.js';
 import { Admin } from '../models/admin.model.js';
 import ApiError from '../utils/apiError.js';
+
+
+
+export const authenticateOwner = asyncHandler(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return next(new ApiError('No token provided', 401));
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const owner = await Owner.findById(decoded.id);
+        if (!owner) {
+            return next(new ApiError('Owner not found', 404));
+        }
+        req.owner = owner;
+        next();
+    }
+    catch (error) {
+        return next(new ApiError('Invalid token', 401));
+    }
+});
+
+
+
+
 
 export const authenticateUser = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers.authorization;
