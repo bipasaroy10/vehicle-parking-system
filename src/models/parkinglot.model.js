@@ -2,26 +2,43 @@ import mongoose, { Schema } from "mongoose";
 
 
 const parkingLotSchema = new Schema({
-    parkingSlot: {
-        type: String,
-        required: true,
-        enum:[ ]
+     parkingSlot: {
+      type: [
+        {
+          slotNumber: Number,
+          isBooked: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      ],
+      default: [],
     },
+
+    availableSpots: {
+      type: Number,
+      default: function () {
+        return this.totalSlots;
+      },
+    },
+
     location: {
         type: String,
         required: true,
     },
-    capacity: {
+    totalSlots: {
         type: Number,
         required: true,
     },
   
-    availableSpots: {
+
+    bookingDuration: {
         type: Number,
         required: true,
     },
-    bookingTime: {
-        type: Date,
+
+    pricePerHour: {
+        type: Number,
         required: true,
     },
 

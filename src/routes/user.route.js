@@ -11,4 +11,5 @@ router.get('/admins', authenticateUser, getAllAdmins);
 router.post('/bookParking/:adminId', authenticateUser, bookParking);
 
 
+
 export default router;

@@ -33,6 +33,26 @@ const userSchema = new Schema({
         type: String,
         unique: true,
     },
+   
+    parkingLot: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "ParkingLot",
+        },
+
+    status: {
+        type: String,
+        enum: ['active', 'cancelled', 'completed'],
+        default: 'active',
+    },
+
+    startTime: {
+        type: Date,
+        default: Date.now,
+    },
+    endTime: {
+        type: Date,
+    },
+
 
     
 

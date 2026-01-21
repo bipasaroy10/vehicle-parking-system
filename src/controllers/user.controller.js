@@ -6,6 +6,7 @@ import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { Admin } from '../models/admin.model.js';
+import { ParkingLot } from '../models/parkinglot.model.js';
 
 export const registerUser = asyncHandler(async (req, res, next) => {
     try {
@@ -42,8 +43,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
             password: hashedPassword,
             profileImage,
             userLicense
-        });console.log("Profile image path:", profileImageLocalPath);
-console.log("License image path:", userLicenseLocalPath);
+        });
 
 
         
@@ -155,23 +155,63 @@ export const getAllAdmins = asyncHandler(async (req, res, next) => {
 });
 
 
-export const bookParking = asyncHandler(async (req, res, next) => {
-    try {
-        const userId = req.user._id;
-        const { adminId, parkingSlot, bookingTime } = req.body;
-        const admin = await Admin.findById(adminId);
-        if (!admin) {
-            return next(new ApiError('Admin not found', 404));
-        }
-        // Here you would typically create a Booking model and save the booking details
-        res.status(200).json(new ApiResponse(true, 'Parking booked successfully', {
-            userId,
-            adminId,
-            parkingSlot,
-            bookingTime
-        }));
-    } catch (error) {
-        return next(new ApiError({message:error.message}));
-    }
-});
 
+export const bookParking = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { adminId } = req.params;
+
+  // 1️⃣ Find user
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
+  // ❗ Prevent double booking
+  if (user.parkingLot) {
+    return next(new ApiError("User already has an active parking", 400));
+  }
+
+  // 2️⃣ Find admin and parking lot
+  const admin = await Admin.findById(adminId).populate("parkingLot");
+  if (!admin || !admin.parkingLot) {
+    return next(new ApiError("Parking lot not found", 404));
+  }
+
+  const parkingLot = admin.parkingLot;
+
+  // 3️⃣ Check availability
+  if (parkingLot.availableSpots <= 0) {
+    return next(new ApiError("No parking spots available", 400));
+  }
+
+  // 4️⃣ Find a free slot
+  const freeSlot = parkingLot.parkingSlot.find(
+    (slot) => slot.isBooked === false
+  );
+
+  if (!freeSlot) {
+    return next(new ApiError("No free slot found", 400));
+  }
+
+  // 5️⃣ Book slot
+  freeSlot.isBooked = true;
+  parkingLot.availableSpots -= 1;
+
+  await parkingLot.save();
+
+  // 6️⃣ Save booking info in user
+  user.parkingLot = parkingLot._id;
+  user.slotNumber = freeSlot.slotNumber;
+  user.startTime = new Date();
+
+  await user.save();
+
+  // 7️⃣ Response
+  res.status(200).json(
+    new ApiResponse(true, "Parking booked successfully", {
+      parkingLotId: parkingLot._id,
+      slotNumber: freeSlot.slotNumber,
+      startTime: user.startTime,
+    })
+  );
+});
